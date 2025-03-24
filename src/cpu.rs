@@ -707,7 +707,7 @@ impl CPU {
     fn rotate_right_carry(&mut self) {
         let carry = self.carry_flag;
         self.carry_flag = (self.registers[0] & 1) != 0;
-        self.registers[0] = (self.registers[0] << 1) | carry as u8;
+        self.registers[0] = (self.registers[0] >> 1) | (carry as u8) << 7;
     }
 
     fn and(&mut self, val: u8) {
