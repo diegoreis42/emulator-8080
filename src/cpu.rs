@@ -64,38 +64,18 @@ impl CPU {
         self.memory[0x100..0x100 + buffer.len()].copy_from_slice(&buffer);
     }
 
-    pub fn step(&mut self, counter: i32) {
+    pub fn step(&mut self) {
         if self.interrupt_pending && self.interupt_flip_flop && self.interrupt_delay == 0 {
             self.interrupt_pending = false;
             self.interupt_delay = false;
             self.halted = false;
         } else if !self.halted {
             let byte = self.next_byte();
-            self.execute(byte, counter);
+            self.execute(byte);
         }
     }
 
-    pub fn execute(&mut self, opcode: u8, counter: i32) {
-        println!("Opcode {}: {:X}", counter, opcode);
-        println!(
-            "CPU State: A={} B={} C={} D={} E={} H={} L={}",
-            self.registers[0],
-            self.registers[1],
-            self.registers[2],
-            self.registers[3],
-            self.registers[4],
-            self.registers[5],
-            self.registers[6]
-        );
-        println!("PC={} SP={}", self.program_counter, self.stack_pointer);
-        println!(
-            "Flags: SF={} ZF={} HF={} PF={} CF={}",
-            self.sign as u8,
-            self.zero_flag as u8,
-            self.half_carry_flag as u8,
-            self.parity as u8,
-            self.carry_flag as u8
-        );
+    pub fn execute(&mut self, opcode: u8) {
         match opcode {
             0x7F => self.registers[0] = self.registers[0], // MOV A, A
             0x78 => self.registers[0] = self.registers[1], // MOV A, B
@@ -791,19 +771,19 @@ impl CPU {
         psw |= (self.parity as u8) << 2;
         psw |= 1 << 1; // Always 1
         psw |= (self.carry_flag as u8) << 0;
-        self.push_stack((self.registers[0] | psw) as u16);
+        self.push_stack((((self.registers[0] as u16) << 8) | psw as u16) as u16);
     }
 
     fn pop_a_and_flags(&mut self) {
         let af = self.pop_stack();
         self.registers[0] = (af >> 8) as u8;
-        let psw = af & 0xFF;
+        let psw = af as u8; 
 
-        self.sign = (psw >> 7) != 0;
-        self.zero_flag = (psw >> 6) != 0;
-        self.half_carry_flag = (psw >> 4) != 0;
-        self.parity = (psw >> 2) != 0;
-        self.carry_flag = (psw >> 0) != 0;
+        self.sign = (psw & (1 << 7)) != 0;
+        self.zero_flag = (psw & (1 << 6)) != 0;
+        self.half_carry_flag = (psw & (1 << 4)) != 0;
+        self.parity = (psw & (1 << 2)) != 0;
+        self.carry_flag = (psw & 1) != 0;
     }
 
     fn parity(&self, val: u8) -> bool {

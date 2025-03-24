@@ -15,9 +15,7 @@ pub fn main() {
     cpu.memory[0x0006] = 0x01;
     cpu.memory[0x0007] = 0xC9;
 
-    let mut counter = 0;
     while !cpu.finished {
-        cpu.step(counter);
-        counter += 1;
+        cpu.step();
     }
 }
